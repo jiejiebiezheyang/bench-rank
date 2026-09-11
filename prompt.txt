@@ -1,0 +1,1052 @@
+你是一名资深全栈工程师和 UI/UX 设计师.
+
+请帮我开发一个完整的 Web 项目, 项目名称为:
+
+BenchRank
+
+项目定位:
+
+BenchRank 是一个基于 The Computer Language Benchmarks Game 数据的编程语言性能可视化和动态排名网站.
+
+网站不是简单展示 benchmark 数据, 而是允许用户根据不同类型的 benchmark 设置权重, 实时计算不同编程语言/语言实现的综合性能排名.
+
+==================================================
+一. 技术栈
+==================================================
+
+使用:
+
+- Next.js 最新稳定版
+- App Router
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+- Recharts 或 ECharts
+- Lucide React Icons
+
+项目必须:
+
+- 响应式设计
+- 支持 Desktop
+- 支持 Tablet
+- 支持 Mobile
+- Dark Mode 优先
+- UI 简洁现代
+- 类型安全
+- 不使用 any
+- 组件结构清晰
+- 代码可以直接运行
+
+==================================================
+二. 数据来源
+==================================================
+
+数据来源:
+
+The Computer Language Benchmarks Game
+
+数据已经由 Python 爬虫提前抓取并保存为 JSON 文件.
+
+JSON 文件路径:
+
+data/benchmarks.json
+
+JSON 结构如下:
+
+[
+  {
+    "group": "Insignificant-IO",
+    "benchmarks": [
+      {
+        "name": "fannkuch-redux",
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/performance/fannkuchredux.html",
+        "data": [
+          {
+            "×": "1.0",
+            "source": "C gcc",
+            "link": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-gcc-6.html",
+            "secs": "2.14",
+            "mem": "2,712",
+            "gz": "1582",
+            "cpu secs": "8.44"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "group": "Significant-IO",
+    "benchmarks": [
+      {
+        "name": "mandelbrot",
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/performance/mandelbrot.html",
+        "data": [
+          {
+            "×": "1.0",
+            "source": "C++ g++",
+            "link": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-gpp-4.html",
+            "secs": "0.89",
+            "mem": "37,941",
+            "gz": "3554",
+            "cpu secs": "3.46"
+          }
+        ]
+      }
+    ]
+  }
+]
+
+实际 JSON 中, 每个 benchmark 的 data 数组会包含多个编程语言/语言实现的数据.
+
+字段说明:
+
+×:
+相对于该 benchmark 最快程序的时间倍率.
+
+source:
+语言实现名称.
+
+例如:
+
+C gcc
+C++ g++
+Rust
+Python 3
+Java OpenJDK
+Go
+
+link:
+对应程序源码页面.
+
+secs:
+实际运行时间.
+
+mem:
+内存使用量.
+
+gz:
+压缩后的源码大小.
+
+cpu secs:
+CPU 时间.
+
+==================================================
+三. 数据处理
+==================================================
+
+创建统一的数据类型.
+
+不要直接在业务逻辑中大量使用:
+
+result["×"]
+result["cpu secs"]
+
+请创建数据标准化层.
+
+例如:
+
+RawBenchmarkResult
+
+转换为:
+
+BenchmarkResult
+
+标准化后的结构:
+
+{
+  multiplier: number,
+  source: string,
+  link: string,
+  secs: number,
+  mem: number,
+  gz: number,
+  cpuSecs: number
+}
+
+实现:
+
+normalizeBenchmarksData()
+
+功能:
+
+1. 去除数字中的逗号.
+
+例如:
+
+"2,712"
+
+转换为:
+
+2712
+
+2. 转换数字字符串.
+
+例如:
+
+"2.14"
+
+转换为:
+
+2.14
+
+3. 保留 source 原始名称.
+
+4. 处理可能存在的特殊值.
+
+例如:
+
+"5 min"
+
+转换成秒:
+
+300
+
+如果无法转换, 返回 null.
+
+==================================================
+四. Benchmark 分类
+==================================================
+
+网站只使用以下两个 Group:
+
+1. Insignificant IO
+
+包含:
+
+- fannkuch-redux
+- n-body
+- spectral-norm
+
+特点:
+
+主要偏 CPU 计算, 数值计算, 算法和内存访问.
+
+2. Significant IO
+
+包含:
+
+- mandelbrot
+- fasta
+- k-nucleotide
+- reverse-complement
+
+特点:
+
+包含更多 IO, 字符串处理, 数据处理和内存操作.
+
+不要显示 Contentious 类 benchmark.
+
+==================================================
+五. 核心功能 - 动态 Ranking
+==================================================
+
+这是整个项目最重要的功能.
+
+用户可以调整两个 Group 的权重.
+
+默认:
+
+Insignificant IO: 50%
+Significant IO: 50%
+
+UI:
+
+Insignificant IO
+
+[────────────●────────────]
+
+50%
+
+
+Significant IO
+
+[────────────●────────────]
+
+50%
+
+两个权重必须始终满足:
+
+insignificantWeight + significantWeight = 100
+
+当用户修改其中一个:
+
+另一个自动更新.
+
+例如:
+
+Insignificant IO = 70%
+
+则:
+
+Significant IO = 30%
+
+==================================================
+六. Group 内部 Benchmark 权重
+==================================================
+
+默认情况下:
+
+Group 内部 benchmark 平均分配权重.
+
+Insignificant IO:
+
+fannkuch-redux = 1 / 3
+n-body = 1 / 3
+spectral-norm = 1 / 3
+
+Significant IO:
+
+mandelbrot = 1 / 4
+fasta = 1 / 4
+k-nucleotide = 1 / 4
+reverse-complement = 1 / 4
+
+最终 benchmark 权重:
+
+benchmarkWeight =
+groupWeight × benchmarkInternalWeight
+
+例如:
+
+Insignificant IO = 50%
+
+则:
+
+每个 Insignificant IO benchmark:
+
+50% / 3 = 16.67%
+
+Significant IO = 50%
+
+则:
+
+每个 Significant IO benchmark:
+
+50% / 4 = 12.5%
+
+==================================================
+七. Ranking 算法
+==================================================
+
+必须使用:
+
+Weighted Geometric Mean
+
+不要使用普通 Arithmetic Mean.
+
+每个 benchmark 中:
+
+multiplier 越小越好.
+
+例如:
+
+C gcc = 1.0x
+Rust = 1.2x
+Go = 2.0x
+Python = 30x
+
+对于某个语言:
+
+score = exp(
+  Σ(weight_i × ln(multiplier_i))
+)
+
+最终:
+
+score 越小越好.
+
+排名从小到大排序.
+
+显示:
+
+Rank
+Language / Implementation
+Score
+Relative Performance
+
+例如:
+
+1    C gcc       1.08x
+2    Rust        1.15x
+3    C++ g++     1.22x
+4    Go          1.85x
+5    Java        2.30x
+
+==================================================
+八. 缺失 Benchmark 数据处理
+==================================================
+
+不是每种语言都会出现在所有 benchmark 中.
+
+例如:
+
+Rust:
+
+可能存在:
+
+fannkuch-redux
+n-body
+spectral-norm
+fasta
+
+但是可能缺少:
+
+k-nucleotide
+
+因此 Ranking 算法必须正确处理缺失数据.
+
+实现策略:
+
+默认只使用该语言实际存在的 benchmark 数据.
+
+但是必须重新归一化该语言参与计算的权重.
+
+例如:
+
+language A 缺少某个 benchmark.
+
+原始可用 benchmark 权重:
+
+0.15
+0.15
+0.20
+0.20
+
+总权重:
+
+0.70
+
+重新归一化:
+
+0.15 / 0.70
+0.15 / 0.70
+0.20 / 0.70
+0.20 / 0.70
+
+然后再计算 Weighted Geometric Mean.
+
+同时 UI 必须显示:
+
+Coverage
+
+例如:
+
+7 / 7 benchmarks
+
+或者:
+
+6 / 7 benchmarks
+
+Coverage 较低的语言需要视觉提示.
+
+==================================================
+九. 首页布局
+==================================================
+
+首页使用 Dashboard 风格.
+
+整体:
+
+Dark Theme
+
+背景:
+
+接近黑色:
+
+#09090b
+
+Card:
+
+#18181b
+
+Border:
+
+#27272a
+
+整体风格:
+
+现代
+简洁
+数据产品
+专业
+类似 Linear / Vercel / Stripe Dashboard 的设计语言.
+
+==================================================
+十. Header
+==================================================
+
+顶部 Header:
+
+左侧:
+
+BenchRank
+
+副标题:
+
+Programming Language Performance Explorer
+
+右侧:
+
+Data Source
+
+点击跳转:
+
+The Computer Language Benchmarks Game
+
+外部链接必须使用:
+
+target="_blank"
+
+==================================================
+十一. Hero 区域
+==================================================
+
+页面顶部:
+
+标题:
+
+Programming Language Performance
+
+副标题:
+
+Explore and compare programming language implementations using benchmark data from The Computer Language Benchmarks Game.
+
+显示一个说明:
+
+Rankings are calculated dynamically based on your benchmark category weights.
+
+==================================================
+十二. Weight Controls
+==================================================
+
+创建一个独立组件:
+
+WeightControls.tsx
+
+显示:
+
+Benchmark Weights
+
+Insignificant IO
+
+CPU and computation focused benchmarks.
+
+Slider
+
+50%
+
+Significant IO
+
+Data processing and IO heavy benchmarks.
+
+Slider
+
+50%
+
+提供 Presets:
+
+Balanced
+
+50 / 50
+
+Compute Heavy
+
+75 / 25
+
+IO Heavy
+
+25 / 75
+
+点击 preset 后:
+
+自动更新 slider.
+
+==================================================
+十三. Overall Ranking
+==================================================
+
+这是首页最重要的 Card.
+
+标题:
+
+Overall Ranking
+
+副标题:
+
+Calculated using weighted geometric mean.
+
+显示 Top 10.
+
+每行:
+
+Rank
+
+Language Implementation
+
+Horizontal Performance Bar
+
+Score
+
+Coverage
+
+例如:
+
+🥇 1
+
+Rust
+
+██████████████████
+
+1.12x
+
+7 / 7
+
+
+🥈 2
+
+C gcc
+
+████████████████
+
+1.18x
+
+7 / 7
+
+
+🥉 3
+
+C++ g++
+
+██████████████
+
+1.25x
+
+7 / 7
+
+不要使用 emoji 作为主要 UI 元素.
+
+前三名可以使用:
+
+Gold
+Silver
+Bronze
+
+的小 badge.
+
+其他排名使用普通数字.
+
+Performance Bar:
+
+最快语言最长.
+
+其他语言根据:
+
+bestScore / languageScore
+
+计算百分比.
+
+例如:
+
+best = 1.0
+
+language = 2.0
+
+bar = 50%.
+
+==================================================
+十四. Ranking Chart
+==================================================
+
+创建:
+
+RankingChart.tsx
+
+使用:
+
+Recharts 或 ECharts.
+
+使用 Horizontal Bar Chart.
+
+X axis:
+
+Score / Relative slowdown
+
+Y axis:
+
+Language implementation.
+
+显示 Top 10 或 Top 15.
+
+支持 Tooltip.
+
+Tooltip:
+
+Language
+Score
+Coverage
+
+图表必须随着 Weight Slider 实时更新.
+
+==================================================
+十五. Benchmark Groups
+==================================================
+
+在 Overall Ranking 下方显示两个 Group.
+
+Insignificant IO
+
+显示:
+
+3 benchmarks
+
+- fannkuch-redux
+- n-body
+- spectral-norm
+
+Significant IO
+
+显示:
+
+4 benchmarks
+
+- mandelbrot
+- fasta
+- k-nucleotide
+- reverse-complement
+
+每个 Benchmark Card 显示:
+
+Benchmark Name
+
+Group
+
+Official Benchmark Link
+
+Fastest Implementation
+
+Fastest Time
+
+Memory
+
+CPU Time
+
+==================================================
+十六. Benchmark Details
+==================================================
+
+创建 BenchmarkCard.
+
+点击可以展开或者进入详情.
+
+展示该 benchmark 的完整语言排名.
+
+表格:
+
+Rank
+Implementation
+Multiplier
+Time
+Memory
+CPU Time
+
+例如:
+
+1
+C gcc
+1.00x
+2.14s
+2,712 KB
+8.44s
+
+2
+Rust
+1.12x
+2.40s
+...
+
+点击 Implementation:
+
+打开对应:
+
+link
+
+==================================================
+十七. Search 和 Filter
+==================================================
+
+提供 Search.
+
+Placeholder:
+
+Search language...
+
+用户输入:
+
+Rust
+
+则 Ranking 和 Benchmark Table 中过滤.
+
+提供 Group Filter:
+
+All
+
+Insignificant IO
+
+Significant IO
+
+==================================================
+十八. 数据刷新时间
+==================================================
+
+显示:
+
+Last updated
+
+数据 JSON 可以包含:
+
+generatedAt
+
+如果当前 JSON 没有这个字段:
+
+不要伪造真实时间.
+
+显示:
+
+Static dataset
+
+==================================================
+十九. 文件结构
+==================================================
+
+请按照以下结构组织:
+
+app/
+  layout.tsx
+  page.tsx
+  globals.css
+
+components/
+  Header.tsx
+  Hero.tsx
+  WeightControls.tsx
+  OverallRanking.tsx
+  RankingChart.tsx
+  BenchmarkGroups.tsx
+  BenchmarkCard.tsx
+  BenchmarkTable.tsx
+  SearchFilter.tsx
+
+lib/
+  types.ts
+  normalize.ts
+  ranking.ts
+  utils.ts
+
+data/
+  benchmarks.json
+
+==================================================
+二十. TypeScript 类型
+==================================================
+
+定义:
+
+RawBenchmarkResult
+
+BenchmarkResult
+
+RawBenchmark
+
+Benchmark
+
+BenchmarkGroup
+
+LanguageScore
+
+WeightConfig
+
+例如:
+
+LanguageScore:
+
+{
+  source: string,
+  score: number,
+  coverage: number,
+  totalBenchmarks: number,
+  coveragePercent: number
+}
+
+WeightConfig:
+
+{
+  insignificantIO: number,
+  significantIO: number
+}
+
+==================================================
+二十一. Ranking 算法实现
+==================================================
+
+创建:
+
+lib/ranking.ts
+
+实现函数:
+
+calculateRanking(
+  groups,
+  weights
+)
+
+算法:
+
+1. 获取所有 benchmark.
+
+2. 根据 Group Weight 计算每个 benchmark 权重.
+
+3. 收集所有语言 implementation.
+
+4. 对每个语言:
+
+获取它存在的 benchmark multiplier.
+
+5. 如果 multiplier 不存在:
+
+跳过该 benchmark.
+
+6. 计算实际参与 benchmark 的总权重.
+
+7. 对参与 benchmark 的权重进行重新归一化.
+
+8. 使用:
+
+exp(sum(weight × log(multiplier)))
+
+计算 score.
+
+9. score 越小排名越高.
+
+10. 返回排序后的 LanguageScore[].
+
+必须:
+
+避免 log(0).
+
+必须:
+
+过滤:
+
+null
+undefined
+NaN
+Infinity
+非正数
+
+==================================================
+二十二. 性能
+==================================================
+
+使用:
+
+useMemo
+
+缓存 Ranking 计算.
+
+Weight 改变时:
+
+实时重新计算.
+
+不要产生无限 render.
+
+不要在 render 中修改 state.
+
+==================================================
+二十三. 可访问性
+==================================================
+
+所有 Slider:
+
+必须有 label.
+
+所有 Button:
+
+必须可 keyboard 操作.
+
+外部链接:
+
+必须有合理 aria-label.
+
+颜色不能是唯一的信息表达方式.
+
+==================================================
+二十四. README
+==================================================
+
+生成完整 README.md.
+
+包含:
+
+项目介绍
+
+Features
+
+Tech Stack
+
+Installation
+
+npm install
+
+npm run dev
+
+Data Format
+
+Ranking Algorithm
+
+Weighted Geometric Mean
+
+公式:
+
+Score = exp(Σ(wᵢ × ln(xᵢ)))
+
+说明:
+
+- Score 越低越好
+- Benchmark 权重可以动态调整
+- Group 内部默认平均分配
+- 缺失数据会重新归一化权重
+
+免责声明:
+
+BenchRank does not claim to determine the "best" programming language.
+
+Results are based on a selected set of microbenchmarks and should not be interpreted as general-purpose programming language rankings.
+
+==================================================
+二十五. 最终输出要求
+==================================================
+
+请直接生成完整可运行项目代码.
+
+要求:
+
+1. 不要只给伪代码.
+2. 不要省略任何核心文件.
+3. 每个文件都提供完整代码.
+4. 确保 import 路径正确.
+5. 确保 TypeScript 可以编译.
+6. 确保 JSON 可以正确读取.
+7. 确保 Ranking 可以实时更新.
+8. 确保 Slider 权重始终等于 100%.
+9. UI 必须完整.
+10. 代码必须适合直接复制到 Next.js 项目运行.
+
+优先保证:
+
+数据计算正确性 > TypeScript 类型安全 > UI > 动画效果.
+
+不要过度设计.
+
+不要添加无关功能.
+
+最终完成后, 给出项目目录结构和运行步骤.
