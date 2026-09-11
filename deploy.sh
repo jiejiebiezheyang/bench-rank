@@ -71,11 +71,19 @@ stop_old_server() {
 stop_old_server
 
 # ---------- 3. Python venv + 生成数据 ----------
-if [[ ! -d "$VENV_DIR" ]]; then
+# 目录存在但缺少 bin/activate 说明 venv 不完整(上次创建失败残留),需要重建
+if [[ ! -d "$VENV_DIR" || ! -f "$VENV_DIR/bin/activate" ]]; then
   log "创建 Python venv: $VENV_DIR"
-  "$PYTHON" -m venv "$VENV_DIR"
+  rm -rf "$VENV_DIR"
+  if ! "$PYTHON" -m venv "$VENV_DIR"; then
+    log "错误: 创建 venv 失败。"
+    log "  Ubuntu/Debian 通常需要先安装: apt install -y python3-venv"
+    log "  或指定可用的 Python: PYTHON=/usr/bin/python3.11 ./deploy.sh"
+    exit 1
+  fi
 fi
 # shellcheck disable=SC1091
+# shellcheck disable=SC1090
 source "$VENV_DIR/bin/activate"
 
 # 解析脚本只用 Python 标准库;若以后引入第三方依赖,在 data/requirements.txt 声明
