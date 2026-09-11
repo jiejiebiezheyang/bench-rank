@@ -77,7 +77,9 @@ export function OverallRanking({ scores, search }: OverallRankingProps) {
             {filtered.map((entry, index) => {
               const rank = index + 1
               const medalType = rankBadgeVariant(rank)
-              const barWidth = Math.min(100, Math.max(2, (bestScore / entry.score) * 100)) + '%'
+              // const barWidth = Math.min(100, Math.max(2, (bestScore / entry.score) * 100)) + '%'
+              const barWidth =
+                Math.max(5, 100 - Math.min(100, Math.max(2, (bestScore / entry.score) * 100))) + '%'
               const lowCoverage = entry.coveragePercent < 100
 
               return (

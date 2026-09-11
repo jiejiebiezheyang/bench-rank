@@ -9,7 +9,7 @@ Rather than just displaying benchmark numbers, BenchRank lets you adjust the wei
 ## Features
 
 - **Dynamic Ranking** — adjust the weight between _Insignificant IO_ (CPU/computation) and _Significant IO_ (IO/data processing) benchmarks; the ranking recalculates live.
-- **Weighted Geometric Mean scoring** — the ranking uses `exp(Σ(wᵢ × ln(xᵢ)))`, never a plain arithmetic mean.
+- **Weighted Geometric Mean scoring (time-first)** — the ranking uses `exp(Σ(wᵢ × ln(ratioᵢ)))` (80% time + 20% memory), never a plain arithmetic mean. The best language is always 1.0x.
 - **Weight presets** — Balanced (50/50), Compute Heavy (75/25), IO Heavy (25/75). Sliders always sum to 100%.
 - **Coverage awareness** — languages missing from some benchmarks are still ranked by re-normalizing their available weights, and a visual hint marks partial coverage (e.g. `6/7`).
 - **Ranking Chart** — horizontal bar chart (Recharts) that updates in real time with the sliders.
@@ -71,7 +71,7 @@ BenchRankUI/
 │   │   └── language-context.tsx    # LanguageProvider + useLanguage hook
 │   ├── types.ts            # shared TypeScript types
 │   ├── normalize.ts        # RawBenchmarkResult -> BenchmarkResult
-│   ├── ranking.ts          # weighted geometric mean ranking
+│   ├── ranking.ts          # time/memory weighted geometric mean ranking
 │   └── utils.ts            # formatting & search matching helpers
 ├── data/
 │   └── benchmarks.json
@@ -117,25 +117,28 @@ Only two groups are used for ranking:
 
 ## Ranking Algorithm
 
-The ranking uses a **weighted geometric mean**:
+The ranking uses a **combined time/memory weighted geometric mean**, with time taking priority:
 
 ```
-Score = exp(Σ(wᵢ × ln(xᵢ)))
+ratioᵢ = timeᵢ^0.8 × memᵢ^0.2
+Score  = exp(Σ(wᵢ × ln(ratioᵢ))) / best
 ```
 
 Where:
 
-- `xᵢ` is the language's multiplier (time relative to the fastest program) for benchmark `i`. Lower is better.
+- `timeᵢ` is the language's time multiplier (time relative to the fastest program) for benchmark `i`.
+- `memᵢ` is the language's memory multiplier (relative to the lowest memory usage in that benchmark).
 - `wᵢ` is the benchmark's normalized weight: `groupWeight × (1 / benchmarksInGroup)`, re-normalized per language so that missing benchmarks don't penalize it.
-- `Score` is the final geometric mean multiplier — **lower is better**. The table is sorted ascending.
+- `Score` is normalized so the best language is `1.0x`; every other language is a multiple of it — **lower is better**. The table is sorted ascending.
 
 Notes:
 
-- Score is lower = better.
+- Score is lower = better; the best language is always `1.0x`.
+- Time weight (80%) is higher than memory weight (20%).
 - Benchmark weights are dynamically adjustable via the sliders.
 - Within a group, benchmarks share the group weight equally by default.
-- Missing data is handled by re-normalizing the weights of the benchmarks the language actually participates in.
-- Unusable multipliers (`null`, `NaN`, `Infinity`, non-positive values) are ignored, and `log(0)` is avoided.
+- Missing data (either time or memory) skips that benchmark and is handled by re-normalizing the weights of the benchmarks the language actually participates in.
+- Unusable values (`null`, `NaN`, `Infinity`, non-positive numbers) are ignored, and `log(0)` is avoided.
 
 ## Language & Theme
 

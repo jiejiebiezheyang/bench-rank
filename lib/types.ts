@@ -56,7 +56,8 @@ export interface BenchmarkGroup {
 /** A single language/implementation entry in the final ranking. */
 export interface LanguageScore {
   source: string
-  /** Weighted geometric mean, lower is better. */
+  /** Combined time/memory score (80% time, 20% memory), lower is better.
+   *  Normalized so the best language is 1.0x. */
   score: number
   /** Number of benchmarks the language actually participated in. */
   coverage: number
