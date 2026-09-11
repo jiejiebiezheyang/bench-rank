@@ -100,6 +100,9 @@ log "运行 parse_benchmarks.py 生成 data/benchmarks.json ..."
 log "npm install ..."
 npm install
 
+log "清理旧构建目录 .next ..."
+rm -rf .next
+
 log "npm run build (生产构建) ..."
 npm run build
 
