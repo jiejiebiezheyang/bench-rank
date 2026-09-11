@@ -9,7 +9,12 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'BenchRank | Programming Language Performance Explorer',
   description:
-    'Compare programming language implementations using benchmark data from The Computer Language Benchmarks Game, with dynamic weighted rankings.'
+    'Compare programming language implementations using benchmark data from The Computer Language Benchmarks Game, with dynamic weighted rankings.',
+  icons: {
+    icon: [{ url: '/icon.svg', type: 'image/svg+xml', sizes: 'any' }],
+    shortcut: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+    apple: [{ url: '/icon.svg', type: 'image/svg+xml' }]
+  }
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
