@@ -1,53 +1,63 @@
 # BenchRank
 
-基于 [The Computer Language Benchmarks Game](https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html) 数据的编程语言性能可视化与动态排名网站。
+[![Next.js](https://img.shields.io/badge/Next.js-15-000000?style=flat-square&logo=nextdotjs&logoColor=white)](https://nextjs.org)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![Recharts](https://img.shields.io/badge/Recharts-2.15-8884D8?style=flat-square)](https://recharts.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/jiejiebiezheyang/bench-rank?style=flat-square&logo=github&label=stars)](https://github.com/jiejiebiezheyang/bench-rank/stargazers)
+[![Last commit](https://img.shields.io/github/last-commit/jiejiebiezheyang/bench-rank?style=flat-square)](https://github.com/jiejiebiezheyang/bench-rank/commits/main)
 
-BenchRank 不只是简单展示基准测试数据，而是允许你调整每个基准测试类别的权重，实时计算不同编程语言/语言实现的综合性能排名。
+A programming language performance visualization and dynamic ranking website built on data from [The Computer Language Benchmarks Game](https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html).
 
-> English version: [README.EN.md](README.EN.md)
+Rather than just displaying benchmark numbers, BenchRank lets you adjust the weight of each benchmark category and instantly recomputes a weighted geometric-mean ranking of every language implementation in the dataset.
 
-## 功能特性
+> 中文版：[README.zh-CN.md](README.zh-CN.md)
 
-- **动态排名** — 调整 _Insignificant IO_（CPU/计算）与 _Significant IO_（IO/数据处理）基准测试之间的权重，排名实时重新计算。
-- **加权几何平均评分（时间优先）** — 排名使用 `exp(Σ(wᵢ × ln(ratioᵢ)))`（时间 80% + 内存 20%），最优语言恒为 1.0x，绝不使用普通算术平均。
-- **权重预设** — 均衡（50/50）、计算密集型（75/25）、IO 密集型（25/75）。滑块始终保证总和为 100%。
-- **覆盖率提示** — 缺少某些基准测试的语言仍可通过重新归一化其可用权重参与排名，并用视觉提示标记部分覆盖（如 `6/7`）。
-- **排名图表** — Recharts 横向条形图，随滑块实时更新。
-- **基准测试探索** — 展开任意基准测试卡片，查看完整的实现排名（时间 / 内存 / CPU 时间），并链接到官方源码页面。
-- **搜索与分组筛选** — 按语言名或基准测试分组过滤排名表、图表和基准表；支持用 `;` 分隔多个关键词同时搜索（如 `Rust;Go`）。
-- **中英文切换（中文 / English）** — 全站 UI 双语，默认中文，选择持久化到 localStorage。
-- **亮暗主题切换** — 一键切换，默认亮色，选择持久化到 localStorage。
-- **响应式 UI** — Tailwind CSS + shadcn/ui 风格组件，支持桌面、平板和移动端。
+## Features
 
-## 技术栈
+- **Dynamic Ranking** — adjust the weight between _Insignificant IO_ (CPU/computation) and _Significant IO_ (IO/data processing) benchmarks; the ranking recalculates live.
+- **Weighted Geometric Mean scoring (time-first)** — the ranking uses `exp(Σ(wᵢ × ln(ratioᵢ)))` (80% time + 20% memory), never a plain arithmetic mean. The best language is always 1.0x.
+- **Weight presets** — Balanced (50/50), Compute Heavy (75/25), IO Heavy (25/75). Sliders always sum to 100%.
+- **Coverage awareness** — languages missing from some benchmarks are still ranked by re-normalizing their available weights, and a visual hint marks partial coverage (e.g. `6/7`).
+- **Ranking Chart** — horizontal bar chart (Recharts) that updates in real time with the sliders.
+- **Benchmark explorer** — expand any benchmark card to see its full implementation ranking with time / memory / CPU time, with links to the official source pages.
+- **Search & group filter** — filter ranking, chart, and benchmark tables by language name or benchmark group; multiple terms can be combined with `;` (e.g. `Rust;Go`).
+- **i18n (English / 中文)** — full UI translation, English by default; persisted to localStorage.
+- **Light / Dark theme** — one-click toggle (dark by default), persisted to localStorage.
+- **Responsive UI** — Tailwind CSS + shadcn/ui style primitives, works on desktop, tablet, and mobile.
 
-- Next.js（App Router）
-- TypeScript（严格模式，无 `any`）
+## Tech Stack
+
+- Next.js 15 (App Router)
+- React 19
+- TypeScript (strict, no `any`)
 - Tailwind CSS
-- shadcn/ui 风格组件（Radix 原语 + CVA）
+- shadcn/ui style components (Radix primitives + CVA)
 - Recharts
-- Lucide React 图标
+- Lucide React icons
 
-## 安装运行
+## Installation
 
 ```bash
 npm install
 npm run dev
 ```
 
-然后打开 http://localhost:3000。
+Then open http://localhost:3000.
 
-生产构建：
+Production build:
 
 ```bash
 npm run build
 npm start
 ```
 
-## 项目结构
+## Project Structure
 
 ```
-BenchRankUI/
+bench-rank/
 ├── app/
 │   ├── layout.tsx
 │   ├── page.tsx
@@ -63,25 +73,27 @@ BenchRankUI/
 │   ├── BenchmarkTable.tsx
 │   ├── SearchFilter.tsx
 │   ├── BenchRankDashboard.tsx
-│   ├── theme-provider.tsx   # next-themes 封装
-│   └── ui/                  # shadcn/ui 风格基础组件
+│   ├── theme-provider.tsx   # next-themes wrapper
+│   └── ui/                  # shadcn/ui style primitives
 ├── lib/
 │   ├── i18n/
-│   │   ├── translations.ts         # 中英文翻译字典（类型安全）
+│   │   ├── translations.ts         # zh / en dictionaries (type-safe)
 │   │   └── language-context.tsx    # LanguageProvider + useLanguage hook
-│   ├── types.ts            # 共享 TypeScript 类型
+│   ├── types.ts            # shared TypeScript types
 │   ├── normalize.ts        # RawBenchmarkResult -> BenchmarkResult
-│   ├── ranking.ts          # 时间/内存加权几何平均排名算法
-│   └── utils.ts            # 格式化与搜索匹配工具
+│   ├── ranking.ts          # time/memory weighted geometric mean ranking
+│   └── utils.ts            # formatting & search matching helpers
 ├── data/
+│   ├── parse_benchmarks.py # scraper that generates benchmarks.json
 │   └── benchmarks.json
-├── README.md
-└── README.EN.md
+├── deploy.sh               # one-command Linux/macOS deployment script
+├── LICENSE
+└── README.md / README.zh-CN.md
 ```
 
-## 数据格式
+## Data Format
 
-`data/benchmarks.json` 是分组的 JSON 数组：
+`data/benchmarks.json` is a JSON array of groups:
 
 ```json
 [
@@ -108,43 +120,47 @@ BenchRankUI/
 ]
 ```
 
-应用会将其标准化为类型化的数字记录（`multiplier`、`secs`、`mem`、`gz`、`cpuSecs`）：去除千位分隔符、将字符串转为数字，并处理特殊时长值（如 `"5 min"` → 300 秒）。无法解析的值变为 `null`，在评分时被过滤。
+The app normalizes this into typed numeric records (`multiplier`, `secs`, `mem`, `gz`, `cpuSecs`), stripping thousands separators, converting strings to numbers, and handling special duration values such as `"5 min"` (→ 300 seconds). Unparseable values become `null` and are filtered out during scoring.
 
-排名只使用以下两个分组：
+Only two groups are used for ranking:
 
-- **Insignificant IO** — `fannkuch-redux`、`n-body`、`spectral-norm`
-- **Significant IO** — `mandelbrot`、`fasta`、`k-nucleotide`、`reverse-complement`
+- **Insignificant IO** — `fannkuch-redux`, `n-body`, `spectral-norm`
+- **Significant IO** — `mandelbrot`, `fasta`, `k-nucleotide`, `reverse-complement`
 
-## 排名算法
+## Ranking Algorithm
 
-排名使用**时间/内存组合加权几何平均**，时间权重优先：
+The ranking uses a **combined time/memory weighted geometric mean**, with time taking priority:
 
 ```
 ratioᵢ = timeᵢ^0.8 × memᵢ^0.2
 Score  = exp(Σ(wᵢ × ln(ratioᵢ))) / best
 ```
 
-其中：
+Where:
 
-- `timeᵢ` 是该语言在基准测试 `i` 中的时间倍率（相对最快程序的时间倍数）。
-- `memᵢ` 是该语言在基准测试 `i` 中的内存倍率（相对该题最小内存的倍数）。
-- `wᵢ` 是基准测试的归一化权重：`groupWeight × (1 / benchmarksInGroup)`，并按语言重新归一化，使缺失的基准测试不会惩罚该语言。
-- `Score` 归一化后最优语言为 `1.0x`，其余为相对最优的倍数——**越低越好**，表格按升序排列。
+- `timeᵢ` is the language's time multiplier (time relative to the fastest program) for benchmark `i`.
+- `memᵢ` is the language's memory multiplier (relative to the lowest memory usage in that benchmark).
+- `wᵢ` is the benchmark's normalized weight: `groupWeight × (1 / benchmarksInGroup)`, re-normalized per language so that missing benchmarks don't penalize it.
+- `Score` is normalized so the best language is `1.0x`; every other language is a multiple of it — **lower is better**. The table is sorted ascending.
 
-说明：
+Notes:
 
-- 得分越低越好，最优语言恒为 `1.0x`。
-- 时间权重（80%）高于内存权重（20%）。
-- 基准测试权重可通过滑块动态调整。
-- 分组内部默认平均分配权重。
-- 缺失数据（时间或内存任一缺失）会跳过该题并重新归一化该语言实际参与的基准测试权重。
-- 不可用的数值（`null`、`NaN`、`Infinity`、非正数）会被忽略，并避免 `log(0)`。
+- Score is lower = better; the best language is always `1.0x`.
+- Time weight (80%) is higher than memory weight (20%).
+- Benchmark weights are dynamically adjustable via the sliders.
+- Within a group, benchmarks share the group weight equally by default.
+- Missing data (either time or memory) skips that benchmark and is handled by re-normalizing the weights of the benchmarks the language actually participates in.
+- Unusable values (`null`, `NaN`, `Infinity`, non-positive numbers) are ignored, and `log(0)` is avoided.
 
-## 语言与主题
+## Language & Theme
 
-- **语言** — 默认中文。通过 Header 中的 `EN` / `中文` 按钮切换，选择存储在 `localStorage`（`benchrank-language`）。
-- **主题** — 默认亮色。通过 Header 中的太阳/月亮按钮切换亮/暗，选择通过 `next-themes` 存储在 `localStorage`（`benchrank-theme`）。
+- **Language** — defaults to English. Toggle with the `EN` / `中文` button in the header. The choice is stored in `localStorage` (`benchrank-language`).
+- **Theme** — dark by default. Toggle light/dark with the sun/moon button in the header. The choice is stored in `localStorage` (`benchrank-theme`) via `next-themes`.
 
-## 免责声明
+## Disclaimer
 
-BenchRank 不声称要评判"最佳"编程语言。结果基于一组选定的微基准测试，不应被解读为通用编程语言排名。
+BenchRank does not claim to determine the "best" programming language. Results are based on a selected set of microbenchmarks and should not be interpreted as general-purpose programming language rankings.
+
+## License
+
+[MIT](LICENSE) © jiejiebiezheyang
